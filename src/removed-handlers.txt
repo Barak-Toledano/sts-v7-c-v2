@@ -1,0 +1,67 @@
+# Removed Event Handlers and Direct Interactions from main.py
+
+The following event handlers and direct service interactions have been removed from the original main.py and migrated to the domain-oriented architecture:
+
+## Event Handlers Removed
+
+1. `handle_text_response(delta, full_text, response_id)`
+   - Handled text from the assistant
+   - Migrated to: ConversationManager's event handling system
+
+2. `handle_transcript(delta, full_transcript, part_id, response_id)`
+   - Handled transcription events
+   - Migrated to: ConversationManager's transcription event handling
+
+3. `handle_function_call(function_name, arguments, call_id, response_id, conversation_manager)`
+   - Handled function calls from the assistant
+   - Migrated to: ConversationManager's function call handling
+
+4. `handle_response_complete(response)`
+   - Handled completion of responses
+   - Migrated to: ConversationManager's response event handling
+
+5. `handle_error(error_info)`
+   - Handled API errors
+   - Migrated to: Error handling in API client and EventBus
+
+6. `setup_conversation(conversation)`
+   - Set up initial conversation configuration
+   - Migrated to: ConversationManager's initialization and start method
+
+7. Signal handlers for shutdown
+   - Migrated to: Application class signal handling
+
+## Direct Service Interactions Removed
+
+1. Realtime client WebSocket connection management
+   - Migrated to: RealtimeClient/ApiClient in the services layer
+
+2. Audio recording and playback
+   - Migrated to: AudioManager in the domain layer and AudioService in the services layer
+
+3. Conversation configuration
+   - Migrated to: ConversationManager in the domain layer
+
+4. Audio device selection
+   - Migrated to: Application class with optional device selection
+
+5. Audio file processing
+   - Migrated to: AudioManager's file processing capabilities
+
+6. WebSocket message handling
+   - Migrated to: RealtimeClient and event handling system
+
+7. Function call execution
+   - Migrated to: Domain-specific function handlers
+
+8. Session lifecycle management
+   - Migrated to: ConversationManager's lifecycle methods
+
+## Key Benefits of the New Structure
+
+1. **Clear Responsibility Boundaries**: Each component has a well-defined responsibility
+2. **Improved Testability**: Components can be tested in isolation
+3. **Better Error Handling**: Consistent error management across the application
+4. **Event-Driven Architecture**: Centralized event system for all communication
+5. **Configuration Management**: Standardized access to configuration
+6. **Simplified Main Entry Point**: Main.py focuses solely on orchestration

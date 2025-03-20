@@ -1,0 +1,11 @@
+# Run all tests
+pytest
+
+# Skip performance tests (useful for CI/CD)
+SKIP_PERFORMANCE_TESTS=1 pytest
+
+# Run only integration tests
+pytest tests/test_integration.py
+
+# Run with verbose output
+pytest -v

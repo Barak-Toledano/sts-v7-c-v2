@@ -1,0 +1,136 @@
+"""
+Example usage of the Realtime API Client with Event Handler integration.
+
+This example demonstrates how to use the event system with the Realtime API client.
+"""
+
+import asyncio
+import json
+import logging
+import os
+from typing import Any, Dict, Optional
+
+from src.config import settings
+from src.config.logging_config import get_logger
+from src.events.event_interface import (
+    AudioSpeechEvent,
+    Event,
+    EventType, 
+    TranscriptionEvent,
+    event_bus
+)
+from src.services.realtime_event_handler import event_handler
+
+# Set up logging
+logger = get_logger(__name__)
+
+async def handle_speech_started(event: Event) -> None:
+    """Handle user speech started event."""
+    print("\nUser started speaking...")
+
+async def handle_speech_finished(event: Event) -> None:
+    """Handle user speech finished event."""
+    print("\nUser finished speaking")
+
+async def handle_transcription(event: TranscriptionEvent) -> None:
+    """Handle transcription event."""
+    print(f"\nTranscription: {event.text}")
+
+async def handle_text_created(event: Event) -> None:
+    """Handle text response from the AI."""
+    delta = event.data.get("delta", "")
+    print(delta, end="", flush=True)
+
+async def handle_audio_created(event: AudioSpeechEvent) -> None:
+    """Handle audio response from the AI."""
+    audio_bytes = event.chunk
+    if audio_bytes:
+        # In a real app, we would play this audio
+        audio_size = len(audio_bytes)
+        print(f"\nReceived {audio_size} bytes of audio")
+
+async def handle_function_call(event: Event) -> None:
+    """Handle function call from the AI."""
+    function_name = event.data.get("function_name")
+    arguments = event.data.get("arguments", {})
+    call_id = event.data.get("call_id")
+    
+    print(f"\nFunction call: {function_name}")
+    print(f"Arguments: {json.dumps(arguments, indent=2)}")
+    
+    # Example function response
+    result = {"status": "success", "data": {"message": "Function executed successfully"}}
+    
+    # In a real app, you would execute the function here and return real results
+    
+    # TODO: Submit function result to API
+    print(f"Function result: {json.dumps(result, indent=2)}")
+
+async def handle_error(event: Event) -> None:
+    """Handle error events."""
+    error = event.data.get("error", {})
+    message = error.get("message", "Unknown error")
+    error_type = error.get("type", "unknown")
+    
+    print(f"\nError: {error_type} - {message}")
+
+async def main():
+    """Main function to demonstrate API client and event system."""
+    # Register event handlers
+    event_bus.on(EventType.USER_SPEECH_STARTED, handle_speech_started)
+    event_bus.on(EventType.USER_SPEECH_FINISHED, handle_speech_finished)
+    event_bus.on(EventType.USER_TRANSCRIPTION_COMPLETED, handle_transcription)
+    event_bus.on(EventType.TEXT_CREATED, handle_text_created)
+    event_bus.on(EventType.AUDIO_SPEECH_CREATED, handle_audio_created)
+    event_bus.on(EventType.FUNCTION_CALL_RECEIVED, handle_function_call)
+    event_bus.on(EventType.ERROR, handle_error)
+    
+    # Create and connect to the API
+    # In a real implementation, you would use the actual API client
+    # Here we're just demonstrating the event system
+    print("Connecting to OpenAI Realtime API...")
+    
+    # Simulate some events for demonstration purposes
+    await asyncio.sleep(1)
+    
+    # Simulate user speaking
+    event_bus.emit(EventType.USER_SPEECH_STARTED, {})
+    await asyncio.sleep(1)
+    
+    # Simulate transcription
+    event_bus.emit(
+        TranscriptionEvent(
+            type=EventType.USER_TRANSCRIPTION_COMPLETED,
+            text="Hello, can you help me schedule an appointment?",
+            is_final=True
+        )
+    )
+    
+    # Simulate user finished speaking
+    event_bus.emit(EventType.USER_SPEECH_FINISHED, {"duration": 2.5})
+    await asyncio.sleep(0.5)
+    
+    # Simulate AI response
+    response_text = "I'd be happy to help you schedule an appointment. What day works best for you?"
+    for word in response_text.split():
+        event_bus.emit(EventType.TEXT_CREATED, {"delta": word + " "})
+        await asyncio.sleep(0.1)
+    
+    # Simulate function call
+    event_bus.emit(
+        EventType.FUNCTION_CALL_RECEIVED,
+        {
+            "function_name": "check_availability",
+            "arguments": {
+                "date": "2025-03-20",
+                "service_type": "consultation"
+            },
+            "call_id": "call_123456"
+        }
+    )
+    
+    await asyncio.sleep(2)
+    print("\nDemo completed!")
+
+if __name__ == "__main__":
+    asyncio.run(main())
